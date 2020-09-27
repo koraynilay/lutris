@@ -4,6 +4,7 @@ Starts a game in a contained process tree, waits for the game to start,
 gently tries to close other game processes when the main game has exited.
 """
 
+import re
 import os
 import sys
 import time
@@ -84,6 +85,98 @@ def main():
     exclude_proc_count = int(exclude_proc_count)
     include_procs, args = args[:include_proc_count], args[include_proc_count:]
     exclude_procs, args = args[:exclude_proc_count], args[exclude_proc_count:]
+    #get_args_cmd = 0
+    #log(str(args))
+    #arg = " ".join(args)
+    #log(arg)
+    #get_args_cmd = re.search("(?<=\$\()([^)]+)",arg)
+    #if get_args_cmd is None:
+    #    log("None")
+    #else:
+    #    log(get_args_cmd.group(0))
+    #    output = subprocess.check_output(get_args_cmd.group(1),shell=True).decode("utf-8")
+    #    log(output)
+    #    arg = arg.replace("$("+get_args_cmd.group(1)+")",output)
+    #    #log("arg:\n\n"+arg)
+
+    log(str(args))
+    log(args[4])
+    arghi = []
+    get_arghi = 0
+    do_command = 0
+    for carg in args:
+        retc = carg.find(')')
+        if get_arghi == 1:
+            arghi.append(carg.replace(')',''))
+        if retc != -1:
+            get_arghi = 0
+        ret = carg.find('$')
+        if ret != -1: #if found
+            if carg[ret-1] != '\\' and carg[ret+1] != '(': #if not escaped and not command
+                envar = carg[1:]
+                #log(envar)
+                args[args.index(carg)] = carg.replace('$'+envar,os.getenv(envar))
+            elif carg[ret-1] != '\\' and carg[ret+1] == '(': #if not escaped and command
+                do_command = 1
+                arghi.append(carg[ret+2:])
+                get_arghi = 1
+
+    log("arghi:\n\n"+str(arghi))
+    if do_command:
+        try:
+            pipe_indexes = [i for i, x in enumerate(arghi) if x == "|"]
+            log(str(pipe_indexes))
+        except ValueError:
+            log('info: no pipes in custom command')
+        if pipe_indexes:
+            pipes=[]
+            pipes.append(arghi[:pipe_indexes[0]])
+            for p in range(1,len(pipe_indexes)):
+                pipes.append(arghi[pipe_indexes[p-1]+1:pipe_indexes[p]])
+                #p1 = pipe_indexes[i+1] if len(pipe_indexes) < i+1 else pipe_indexes[i]
+                #pipes.append(arghi[pipe_indexes[i]:p1])
+            else:
+                pipes.append(arghi[pipe_indexes[p]+1:])
+            log(str(pipes))
+            outputs = []
+            outputs.append(subprocess.Popen(pipes[0],stdout=subprocess.PIPE))
+            for ps in range(1,len(pipes)):
+                outputs.append(subprocess.Popen(pipes[ps],stdout=subprocess.PIPE,stdin=outputs[ps-1].stdout))
+            else:
+                last = subprocess.check_output(pipes[ps],stdin=outputs[ps].stdout).decode('utf-8').strip()
+                log(last)
+                log(str(arghi))
+        for ar in args:
+            ret = ar.find(')')
+            if ret != -1 and ar[ret-1] != '\\':
+                args.remove(ar)
+        for ghi in arghi:
+            try:
+                args.remove(ghi)
+            except:
+                pass
+        for ar in range(len(args)):
+            args[ar]=args[ar].replace(ghi,"")
+            args[ar]=re.sub(r'\$\(.*',last,args[ar])
+        log(str(args))
+
+            #    first = subprocess.Popen(arghi[:pipe_indexes[i]],stdout=subprocess.PIPE)
+            #    second = subprocess.check_output(arghi[pipe_indexes[i]+1:],stdin=first.stdout)
+            #first.wait
+            #log(second.decode('utf-8'))
+        #log(subprocess.check_output(arghi).decode('utf-8'))
+
+       # for i in range(0,len(args)):
+       #     if carg[i] == "$" and carg[i-1] != "\\":
+       #         if carg[i+1] == "(":
+       #             args_cmds = args_cmds.join(carg[i])
+       #             get_args_cmd = 1
+       #         else:
+       #             args_envs = os.environ(carg)
+
+        #log("plip\n"+args_cmds+"\nplop\n")
+        #ooooo = os.popen(shlex.split(arghi))
+        #log(ooooo)
 
     if "PYTHONPATH" in os.environ:
         del os.environ["PYTHONPATH"]
@@ -117,6 +210,7 @@ def main():
     log("Running %s" % " ".join(args))
     returncode = None
     try:
+        log(str(args))
         initial_pid = subprocess.Popen(args).pid
     except FileNotFoundError:
         log("Failed to execute process. Check that the file exists")
