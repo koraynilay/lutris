@@ -99,8 +99,6 @@ def main():
     #    arg = arg.replace("$("+get_args_cmd.group(1)+")",output)
     #    #log("arg:\n\n"+arg)
 
-    log(str(args))
-    log(args[4])
     arghi = []
     get_arghi = 0
     do_command = 0
