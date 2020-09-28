@@ -109,6 +109,7 @@ def main():
                 get_command_args = 1 # enable getting $(command arguments)
 
     #log("command_args:\n\n"+str(command_args)) #for debug
+    #log("args:\n\n"+str(args)) #for debug
 
     if do_command == 1: # run only if there were some $(commands)
         pipe_indexes = [i for i, x in enumerate(command_args) if x == "|"]
@@ -140,9 +141,10 @@ def main():
             except:
                 pass
         for ar in range(len(args)):
-            args[ar]=args[ar].replace(current_command_arg,"")
+            args[ar]=args[ar].replace(command_args[ar],"")
             # I had to import 're' only for this, if there's a better method lemme know
             args[ar]=re.sub(r'\$\(.*',last,args[ar])
+    #log("args:\n\n"+str(args)) #for debug
 
     if "PYTHONPATH" in os.environ:
         del os.environ["PYTHONPATH"]
