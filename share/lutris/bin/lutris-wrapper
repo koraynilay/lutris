@@ -99,8 +99,10 @@ def main():
         ret = current_arg.find('$')
         if ret != -1: #if found
             if current_arg[ret-1] != '\\' and current_arg[ret+1] != '(': #if '$' not escaped and the rest is not a command
-                envar = current_arg[1:]
-                args[args.index(current_arg)] = current_arg.replace('$'+envar,os.getenv(envar))
+                envar = current_arg[ret+1:] # get VAR name
+                repl = os.getenv(envar)
+                if repl: # replace only if $VAR exists
+                    args[args.index(current_arg)] = current_arg.replace('$'+envar,repl)
             elif current_arg[ret-1] != '\\' and current_arg[ret+1] == '(': #if '$' not escaped and the rest is a command
                 do_command = 1
                 command_args.append(current_arg[ret+2:])
