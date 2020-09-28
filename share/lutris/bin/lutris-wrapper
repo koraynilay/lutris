@@ -122,10 +122,11 @@ def main():
                 pipes.append(command_args[pipe_indexes[p]+1:])
             outputs = []
             outputs.append(subprocess.Popen(pipes[0],stdout=subprocess.PIPE)) # 1st command and pipe
-            for ps in range(1,len(pipes)): # the rest of the commands and pipes
+            for ps in range(1,len(pipes)-1): # the rest of the commands and pipes
                 outputs.append(subprocess.Popen(pipes[ps],stdout=subprocess.PIPE,stdin=outputs[ps-1].stdout))
             else: # last command, of which the output is stored
-                last = subprocess.check_output(pipes[ps],stdin=outputs[ps].stdout).decode('utf-8').strip()
+                ps+=1
+                last = subprocess.check_output(pipes[ps],stdin=outputs[ps-1].stdout).decode('utf-8').strip()
         else: # if no pipes, just run the command and store the output
             last = subprocess.check_output(command_args).decode('utf-8').strip()
         for ar in args:
