@@ -87,6 +87,7 @@ def main():
     exclude_procs, args = args[:exclude_proc_count], args[exclude_proc_count:]
 
     # Parse the args list to see if there are any $VARIABLES or $(commands) that need substitution
+    import re
     command_args = []
     get_command_args = 0
     do_command = 0
